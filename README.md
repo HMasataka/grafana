@@ -94,3 +94,9 @@ kubectl get secret --namespace grafana grafana -o jsonpath="{.data.admin-passwor
 ```bash
 kubectl apply -f https://k8s.io/examples/debug/counter-pod.yaml
 ```
+
+### 8. Grafanaへのログデータソースの追加
+
+GrafanaのWebインターフェースにログデータソースとしてLokiを追加
+
+- URL: `http://loki-gateway.grafana.svc.cluster.local`
