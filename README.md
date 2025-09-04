@@ -18,7 +18,32 @@ helm repo update
 kubectl create namespace grafana
 ```
 
-### 3. Lokiのインストール
+### 3. Prometheusのインストール
+
+Prometheus（メトリクス収集システム）をKubernetesクラスターにインストール
+
+```bash
+helm install prometheus -n grafana prometheus-community/kube-prometheus-stack \
+  --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+  --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+  --set prometheus.prometheusSpec.ruleSelectorNilUsesHelmValues=false \
+  --set prometheus.prometheusSpec.retention=7d
+```
+
+- 設定オプション
+  - `serviceMonitorSelectorNilUsesHelmValues=false`: すべてのServiceMonitorを自動検出
+  - `podMonitorSelectorNilUsesHelmValues=false`: すべてのPodMonitorを自動検出
+  - `ruleSelectorNilUsesHelmValues=false`: すべてのPrometheusRuleを自動検出
+  - `retention=7d`: メトリクスデータの保持期間を7日に設定
+
+Prometheusの公式リポジトリを追加する場合（まだ追加していない場合）:
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+```
+
+### 4. Lokiのインストール
 
 Loki（ログ集約システム）をKubernetesクラスターにインストール
 
@@ -42,7 +67,7 @@ helm install loki -n grafana grafana/loki \
   - `loki.commonConfig.replication_factor=1`: データのレプリケーション因子を1に設定
   - `loki.useTestSchema=true`: テスト用スキーマを使用（開発環境向け）
 
-### 4. Promtailのインストール
+### 5. Promtailのインストール
 
 Kubernetesクラスター内のログを収集し、Lokiに送信
 
@@ -50,7 +75,7 @@ Kubernetesクラスター内のログを収集し、Lokiに送信
 helm install promtail -n grafana grafana/promtail
 ```
 
-### 5. Grafanaのインストール
+### 6. Grafanaのインストール
 
 Grafana（可視化ダッシュボード）をインストール  
 service.type=LoadBalancer: 外部からアクセス可能なLoadBalancerサービスとして公開
@@ -65,7 +90,7 @@ kubectl port-forward -n grafana svc/grafana 3000:80
 
 アクセス: `http://localhost:3000`
 
-### 5. ローカル環境でのアクセス方法の変更（必要に応じて）
+### 7. ローカル環境でのアクセス方法の変更（必要に応じて）
 
 LoadBalancerタイプのサービスはクラウド環境でのみ機能する（ローカル環境ではNodePortなどを使用）可能性があるため、必要に応じて変更する
 
@@ -78,7 +103,7 @@ helm install grafana -n grafana grafana/grafana --set service.type=NodePort
 kubectl get service -n grafana grafana
 ```
 
-### 6. Grafana管理者パスワードの取得
+### 8. Grafana管理者パスワードの取得
 
 Grafanaの管理者（admin）パスワードを取得
 
@@ -86,7 +111,7 @@ Grafanaの管理者（admin）パスワードを取得
 kubectl get secret --namespace grafana grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 ```
 
-### 7. テスト用ポッドの作成
+### 9. テスト用ポッドの作成
 
 ログ生成用のテストポッドを作成  
 定期的にカウンターをログ出力するシンプルなポッド
@@ -95,8 +120,18 @@ kubectl get secret --namespace grafana grafana -o jsonpath="{.data.admin-passwor
 kubectl apply -f https://k8s.io/examples/debug/counter-pod.yaml
 ```
 
-### 8. Grafanaへのログデータソースの追加
+### 10. Grafanaへのデータソースの追加
+
+#### ログデータソース（Loki）の追加
 
 GrafanaのWebインターフェースにログデータソースとしてLokiを追加
 
 - URL: `http://loki-gateway.grafana.svc.cluster.local`
+
+#### メトリクスデータソース（Prometheus）の追加
+
+GrafanaのWebインターフェースにメトリクスデータソースとしてPrometheusを追加
+
+- URL: `http://prometheus-kube-prometheus-prometheus.grafana.svc.cluster.local:9090`
+
+または、kube-prometheus-stackをインストールした場合、GrafanaにはデフォルトでPrometheusデータソースが自動的に設定されます。
