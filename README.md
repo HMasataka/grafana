@@ -55,10 +55,27 @@ helm install promtail -n grafana grafana/promtail
 Grafana（可視化ダッシュボード）をインストール  
 service.type=LoadBalancer: 外部からアクセス可能なLoadBalancerサービスとして公開
 
+```bash
+helm install grafana -n grafana grafana/grafana --set service.type=LoadBalancer
+```
+
+```bash
+kubectl port-forward -n grafana svc/grafana 3000:80
+```
+
+アクセス: `http://localhost:3000`
+
+### 5. ローカル環境でのアクセス方法の変更（必要に応じて）
+
 LoadBalancerタイプのサービスはクラウド環境でのみ機能する（ローカル環境ではNodePortなどを使用）可能性があるため、必要に応じて変更する
 
 ```bash
-helm install grafana -n grafana grafana/grafana --set service.type=LoadBalancer
+helm install grafana -n grafana grafana/grafana --set service.type=NodePort
+```
+
+```bash
+# ノードのIPとポートを確認
+kubectl get service -n grafana grafana
 ```
 
 ### 6. Grafana管理者パスワードの取得
